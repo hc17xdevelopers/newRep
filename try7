@@ -1,33 +1,21 @@
-import json
 import os
 
-def json_to_yolo(json_file, output_folder):
-    with open(json_file, 'r') as json_file:
-        data = json.load(json_file)
+image_folder = '/path/to/your/image/folder'
+label_folder = '/path/to/your/label/folder'
 
-    os.makedirs(output_folder, exist_ok=True)
+# Get a list of all image files
+image_files = [f for f in os.listdir(image_folder) if f.endswith('.jpg') or f.endswith('.png')]
 
-    for annotation_id, annotation_info in data.get('annotations', {}).items():
-        image_id = annotation_info.get('image id')
-        output_file_path = os.path.join(output_folder, f"{image_id}.txt")
+# Get a list of all label files
+label_files = [f[:-4] for f in os.listdir(label_folder) if f.endswith('.txt')]
 
-        with open(output_file_path, 'w') as output_file:
-            keypoints = annotation_info.get('keypoints', {})
-            
-            for keypoint_id, keypoint_name in keypoints.items():
-                # Assume class_id is the keypoint_id, adjust accordingly
-                class_id = int(keypoint_id)
-                
-                # Assuming bbox is available in the annotation_info
-                bbox = annotation_info.get('bbox', {}).get(str(class_id), {})
-                
-                # YOLO format: class x_center y_center width height keypoints
-                yolo_format = f"{class_id} {bbox.get('center', {}).get(0, 0)} {bbox.get('center', {}).get(1, 0)} {bbox.get('width', 0)} {bbox.get('height', 0)} {' '.join(map(str, keypoints))}"
-                
-                output_file.write(yolo_format + '\n')
+# Identify images without corresponding labels
+images_without_labels = set(image_files) - set(label_files)
 
-# Usage
-json_file_path = 'your_annotations.json'
-output_folder_path = 'yolo_txt_output'
+# Delete images without labels
+for image in images_without_labels:
+    image_path = os.path.join(image_folder, image)
+    os.remove(image_path)
+    print(f"Deleted: {image_path}")
 
-json_to_yolo(json_file_path, output_folder_path)
+print("Deletion process completed.")
