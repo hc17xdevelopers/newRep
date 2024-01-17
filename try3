@@ -1,0 +1,42 @@
+import os
+import json
+
+def merge_annotations(bbtxt_folder, kpoint_file, output_folder):
+    # Load skeleton data
+    with open(kpoint_file, 'r') as kpoint_json:
+        skeleton_data = json.load(kpoint_json)
+
+    # Create output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Iterate through bounding box annotation files
+    for bbtxt_filename in os.listdir(bbtxt_folder):
+        if bbtxt_filename.endswith('.txt'):
+            bbtxt_filepath = os.path.join(bbtxt_folder, bbtxt_filename)
+
+            # Load bounding box data
+            with open(bbtxt_filepath, 'r') as bbtxt_file:
+                bb_data = bbtxt_file.read().strip().split('\n')
+
+            image_name = os.path.splitext(bbtxt_filename)[0]
+
+            # Find corresponding skeleton data for the image
+            skeleton_annotation = next((anno for anno in skeleton_data['annotations'] if anno['image_path'] == image_name), None)
+
+            if skeleton_annotation:
+                # Merge bounding box and skeleton data
+                merged_data = []
+                for bb_line in bb_data:
+                    bbox_values = list(map(float, bb_line.split()))
+                    skeleton_values = skeleton_annotation.get('skeleton', [])
+
+                    merged_line = [bbox_values[0]] + bbox_values[1:5] + skeleton_values
+                    merged_data.append(' '.join(map(str, merged_line)))
+
+                # Save merged data to a new .txt file
+                output_filepath = os.path.join(output_folder, f'{image_name}_merged.txt')
+                with open(output_filepath, 'w') as output_file:
+                    output_file.write('\n'.join(merged_data))
+
+# Usage
+merge_annotations('bbtxt', 'kpoint.json', 'merged_output')
