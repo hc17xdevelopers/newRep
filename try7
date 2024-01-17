@@ -1,0 +1,33 @@
+import json
+import os
+
+def json_to_yolo(json_file, output_folder):
+    with open(json_file, 'r') as json_file:
+        data = json.load(json_file)
+
+    os.makedirs(output_folder, exist_ok=True)
+
+    for annotation_id, annotation_info in data.get('annotations', {}).items():
+        image_id = annotation_info.get('image id')
+        output_file_path = os.path.join(output_folder, f"{image_id}.txt")
+
+        with open(output_file_path, 'w') as output_file:
+            keypoints = annotation_info.get('keypoints', {})
+            
+            for keypoint_id, keypoint_name in keypoints.items():
+                # Assume class_id is the keypoint_id, adjust accordingly
+                class_id = int(keypoint_id)
+                
+                # Assuming bbox is available in the annotation_info
+                bbox = annotation_info.get('bbox', {}).get(str(class_id), {})
+                
+                # YOLO format: class x_center y_center width height keypoints
+                yolo_format = f"{class_id} {bbox.get('center', {}).get(0, 0)} {bbox.get('center', {}).get(1, 0)} {bbox.get('width', 0)} {bbox.get('height', 0)} {' '.join(map(str, keypoints))}"
+                
+                output_file.write(yolo_format + '\n')
+
+# Usage
+json_file_path = 'your_annotations.json'
+output_folder_path = 'yolo_txt_output'
+
+json_to_yolo(json_file_path, output_folder_path)
