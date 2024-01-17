@@ -1,0 +1,34 @@
+import json
+import os
+
+def convert_to_yolo(json_file, output_folder, num_classes):
+    with open(json_file, 'r') as json_file:
+        data = json.load(json_file)
+
+    os.makedirs(output_folder, exist_ok=True)
+
+    for image_info in data['annotations']:
+        image_name = os.path.splitext(os.path.basename(image_info['image_path']))[0]
+        output_file_path = os.path.join(output_folder, f"{image_name}.txt")
+
+        with open(output_file_path, 'w') as output_file:
+            for obj_info in image_info['objects']:
+                class_id = obj_info['class']
+                bbox = obj_info['bbox']
+
+                # YOLO format: class x_center y_center width height
+                yolo_format = f"{class_id} {bbox['center'][0]} {bbox['center'][1]} {bbox['width']} {bbox['height']}"
+                
+                # Add keypoints/skeleton information if available
+                if 'keypoints' in obj_info:
+                    keypoints = obj_info['keypoints']
+                    yolo_format += f" {' '.join(map(str, keypoints))}"
+
+                output_file.write(yolo_format + '\n')
+
+# Usage
+json_file_path = 'your_annotations.json'
+output_folder_path = 'yolo_txt_output'
+num_classes = 4  # Assuming you have classes 0 to 3
+
+convert_to_yolo(json_file_path, output_folder_path, num_classes)
