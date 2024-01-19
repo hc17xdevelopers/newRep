@@ -1,0 +1,44 @@
+import os
+
+def normalize_coordinates(annotation_path, image_width, image_height):
+    with open(annotation_path, 'r') as file:
+        lines = file.readlines()
+
+    normalized_lines = []
+
+    for line in lines:
+        parts = line.strip().split()
+        class_id = int(parts[0])
+        x_center = float(parts[1])
+        y_center = float(parts[2])
+        width = float(parts[3])
+        height = float(parts[4])
+
+        # Normalize coordinates
+        x_center /= image_width
+        y_center /= image_height
+        width /= image_width
+        height /= image_height
+
+        normalized_line = f"{class_id} {x_center} {y_center} {width} {height}"
+        normalized_lines.append(normalized_line)
+
+    # Save normalized annotations to a new file
+    normalized_annotation_path = annotation_path.replace('.txt', '_normalized.txt')
+    with open(normalized_annotation_path, 'w') as file:
+        file.write('\n'.join(normalized_lines))
+
+# Specify the path to the directory containing annotation files
+annotations_directory = 'path/to/annotations'
+
+# Specify the dimensions of your images
+image_width = 600  # Replace with the actual width of your images
+image_height = 724  # Replace with the actual height of your images
+
+# Iterate over annotation files in the directory and normalize coordinates
+for annotation_file in os.listdir(annotations_directory):
+    if annotation_file.endswith('.txt'):
+        annotation_path = os.path.join(annotations_directory, annotation_file)
+        normalize_coordinates(annotation_path, image_width, image_height)
+
+print("Normalization complete.")
